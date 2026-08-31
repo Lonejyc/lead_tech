@@ -1,5 +1,6 @@
 const formValidator = require('./form_validator');
 const photoModel = require('./photo_model');
+const zip = require('./zip');
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -37,6 +38,18 @@ function route(app) {
         console.log('aspdfonaposd', error)
         return res.status(500).send({ error });
       });
+  });
+
+  app.post('/zip', (req, res) => {
+    let tags = req.query.tags;
+    return zip
+      .publishZipRequest(tags)
+      .then(messageId => {
+        console.log(`Message ${messageId} published.`);
+        return res.status(200).send({ status: 'queued', messageId, tags });
+      })
+      .catch(error => res.status(500).send({ error }));
+
   });
 }
 
