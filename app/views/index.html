@@ -3,19 +3,43 @@
 
 <div class="container">
 
-  <%- include("_search_form.html") -%>
+  <div id="auth-gate" class="alert alert-info" hidden>
+    <p>Connexion requise pour accéder à l'application.</p>
+    <button type="button" class="btn btn-primary" id="login-btn">Sign in with Google</button>
+  </div>
 
-  <% if (invalidParameters) { %>
-    <div class="alert alert-danger">
-      <strong>Invalid value for "tags" or "tagmode" input parameters</strong><br><br>
-      Tags should be formatted as a comma delimited list containing only letters, commas, and spaces.
-      Tag Mode must equal "all" or "any".
+  <div id="app-content" hidden>
+
+    <p>
+      <span id="user-label"></span>
+      &mdash;
+      <button type="button" class="btn btn-link" id="logout-btn">Se déconnecter</button>
+    </p>
+
+    <%- include("_search_form.html") -%>
+
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Zips déjà générés</h3>
+      </div>
+      <div class="panel-body">
+        <ul id="zip-list"></ul>
+      </div>
     </div>
-  <% } %>
 
-  <% if (searchResults) { %>
-    <%- include("_search_results.html") -%>
-  <% } %>
+    <% if (invalidParameters) { %>
+      <div class="alert alert-danger">
+        <strong>Invalid value for "tags" or "tagmode" input parameters</strong><br><br>
+        Tags should be formatted as a comma delimited list containing only letters, commas, and spaces.
+        Tag Mode must equal "all" or "any".
+      </div>
+    <% } %>
+
+    <% if (searchResults) { %>
+      <%- include("_search_results.html") -%>
+    <% } %>
+
+  </div>
 
 </div>
 
