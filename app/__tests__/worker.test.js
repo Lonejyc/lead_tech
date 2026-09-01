@@ -8,6 +8,7 @@ function toArrayBuffer(text) {
 
 function createFakeWriteStream(shouldError) {
   const stream = new EventEmitter();
+  stream.write = jest.fn(() => true);
   stream.end = jest.fn(() => {
     process.nextTick(() => {
       if (shouldError) {
@@ -89,8 +90,8 @@ describe('downloadImage(url)', () => {
   });
 });
 
-describe('buildZipBuffer(urls)', () => {
-  test('should zip downloaded images into a single Buffer', () => {
+describe('streamZip(urls)', () => {
+  test('should stream downloaded images into the upload and resolve with the filename', () => {
     mockPubSub();
     mockPhotoModel();
     global.fetch = jest.fn(url =>
@@ -98,14 +99,17 @@ describe('buildZipBuffer(urls)', () => {
         arrayBuffer: () => Promise.resolve(toArrayBuffer(url))
       })
     );
+    const fakeStream = createFakeWriteStream(false);
+    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    mockStorage({ file: jest.fn(() => fileMock) });
 
     worker = require('../worker');
 
     return worker
-      .buildZipBuffer(['http://example.com/1.jpg', 'http://example.com/2.jpg'])
-      .then(buffer => {
-        expect(Buffer.isBuffer(buffer)).toBe(true);
-        expect(buffer.length).toBeGreaterThan(0);
+      .streamZip(['http://example.com/1.jpg', 'http://example.com/2.jpg'])
+      .then(filename => {
+        expect(filename).toMatch(/\.zip$/);
+        expect(fakeStream.write).toHaveBeenCalled();
       });
   });
 
@@ -113,40 +117,32 @@ describe('buildZipBuffer(urls)', () => {
     mockPubSub();
     mockPhotoModel();
     global.fetch = jest.fn(() => Promise.reject(new Error('network error')));
-
-    worker = require('../worker');
-
-    return worker.buildZipBuffer(['http://example.com/1.jpg']).catch(error => {
-      expect(error.message).toMatch(/network error/);
-    });
-  });
-});
-
-describe('uploadZip(buffer)', () => {
-  test('should resolve with the generated filename on success', () => {
-    mockPubSub();
-    mockPhotoModel();
     const fakeStream = createFakeWriteStream(false);
     const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
     mockStorage({ file: jest.fn(() => fileMock) });
 
     worker = require('../worker');
 
-    return worker.uploadZip(Buffer.from('zip-bytes')).then(filename => {
-      expect(filename).toMatch(/\.zip$/);
+    return worker.streamZip(['http://example.com/1.jpg']).catch(error => {
+      expect(error.message).toMatch(/network error/);
     });
   });
 
   test('should reject when the upload stream errors', () => {
     mockPubSub();
     mockPhotoModel();
+    global.fetch = jest.fn(url =>
+      Promise.resolve({
+        arrayBuffer: () => Promise.resolve(toArrayBuffer(url))
+      })
+    );
     const fakeStream = createFakeWriteStream(true);
     const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
     mockStorage({ file: jest.fn(() => fileMock) });
 
     worker = require('../worker');
 
-    return worker.uploadZip(Buffer.from('zip-bytes')).catch(error => {
+    return worker.streamZip(['http://example.com/1.jpg']).catch(error => {
       expect(error.message).toMatch(/upload failed/);
     });
   });

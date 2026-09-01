@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1788247198334" clover="3.2.0">
-  <project timestamp="1788247198335" name="All files">
-    <metrics statements="130" coveredstatements="130" conditionals="20" coveredconditionals="20" methods="38" coveredmethods="38" elements="188" coveredelements="188" complexity="0" loc="130" ncloc="130" packages="1" files="7" classes="7"/>
+<coverage generated="1788249243892" clover="3.2.0">
+  <project timestamp="1788249243892" name="All files">
+    <metrics statements="125" coveredstatements="125" conditionals="20" coveredconditionals="20" methods="33" coveredmethods="33" elements="178" coveredelements="178" complexity="0" loc="125" ncloc="125" packages="1" files="7" classes="7"/>
     <file name="form_validator.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/form_validator.js">
       <metrics statements="5" coveredstatements="5" conditionals="4" coveredconditionals="4" methods="3" coveredmethods="3"/>
       <line num="3" count="11" type="stmt"/>
@@ -90,59 +90,54 @@
       <line num="28" count="1" type="stmt"/>
     </file>
     <file name="worker.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/worker.js">
-      <metrics statements="52" coveredstatements="52" conditionals="0" coveredconditionals="0" methods="23" coveredmethods="23"/>
-      <line num="1" count="9" type="stmt"/>
-      <line num="2" count="9" type="stmt"/>
-      <line num="3" count="9" type="stmt"/>
-      <line num="4" count="9" type="stmt"/>
-      <line num="5" count="9" type="stmt"/>
-      <line num="6" count="9" type="stmt"/>
-      <line num="8" count="9" type="stmt"/>
-      <line num="9" count="9" type="stmt"/>
-      <line num="10" count="9" type="stmt"/>
-      <line num="11" count="9" type="stmt"/>
-      <line num="14" count="9" type="stmt"/>
-      <line num="17" count="15" type="stmt"/>
-      <line num="18" count="14" type="stmt"/>
-      <line num="19" count="14" type="stmt"/>
-      <line num="23" count="4" type="stmt"/>
-      <line num="24" count="4" type="stmt"/>
-      <line num="25" count="4" type="stmt"/>
-      <line num="27" count="453" type="stmt"/>
-      <line num="28" count="4" type="stmt"/>
-      <line num="29" count="4" type="stmt"/>
-      <line num="31" count="4" type="stmt"/>
-      <line num="33" count="3" type="stmt"/>
-      <line num="34" count="13" type="stmt"/>
-      <line num="36" count="3" type="stmt"/>
-      <line num="43" count="4" type="stmt"/>
+      <metrics statements="47" coveredstatements="47" conditionals="0" coveredconditionals="0" methods="18" coveredmethods="18"/>
+      <line num="1" count="8" type="stmt"/>
+      <line num="2" count="8" type="stmt"/>
+      <line num="3" count="8" type="stmt"/>
+      <line num="4" count="8" type="stmt"/>
+      <line num="5" count="8" type="stmt"/>
+      <line num="6" count="8" type="stmt"/>
+      <line num="8" count="8" type="stmt"/>
+      <line num="9" count="8" type="stmt"/>
+      <line num="10" count="8" type="stmt"/>
+      <line num="11" count="8" type="stmt"/>
+      <line num="14" count="8" type="stmt"/>
+      <line num="17" count="16" type="stmt"/>
+      <line num="18" count="15" type="stmt"/>
+      <line num="19" count="15" type="stmt"/>
+      <line num="23" count="5" type="stmt"/>
+      <line num="24" count="5" type="stmt"/>
+      <line num="25" count="5" type="stmt"/>
+      <line num="33" count="5" type="stmt"/>
+      <line num="35" count="5" type="stmt"/>
+      <line num="36" count="5" type="stmt"/>
+      <line num="37" count="5" type="stmt"/>
+      <line num="38" count="5" type="stmt"/>
+      <line num="40" count="5" type="stmt"/>
+      <line num="42" count="5" type="stmt"/>
       <line num="44" count="4" type="stmt"/>
-      <line num="45" count="4" type="stmt"/>
-      <line num="53" count="4" type="stmt"/>
-      <line num="54" count="4" type="stmt"/>
-      <line num="55" count="4" type="stmt"/>
-      <line num="56" count="4" type="stmt"/>
-      <line num="62" count="3" type="stmt"/>
-      <line num="64" count="11" type="stmt"/>
-      <line num="65" count="2" type="stmt"/>
+      <line num="45" count="14" type="stmt"/>
+      <line num="47" count="4" type="stmt"/>
+      <line num="55" count="3" type="stmt"/>
+      <line num="57" count="11" type="stmt"/>
+      <line num="58" count="2" type="stmt"/>
+      <line num="61" count="2" type="stmt"/>
+      <line num="62" count="2" type="stmt"/>
       <line num="67" count="2" type="stmt"/>
       <line num="69" count="2" type="stmt"/>
       <line num="70" count="2" type="stmt"/>
-      <line num="75" count="2" type="stmt"/>
-      <line num="77" count="2" type="stmt"/>
-      <line num="78" count="2" type="stmt"/>
-      <line num="79" count="2" type="stmt"/>
-      <line num="81" count="2" type="stmt"/>
-      <line num="83" count="1" type="stmt"/>
-      <line num="84" count="1" type="stmt"/>
-      <line num="87" count="1" type="stmt"/>
-      <line num="88" count="1" type="stmt"/>
+      <line num="71" count="2" type="stmt"/>
+      <line num="73" count="2" type="stmt"/>
+      <line num="75" count="1" type="stmt"/>
+      <line num="76" count="1" type="stmt"/>
+      <line num="79" count="1" type="stmt"/>
+      <line num="80" count="1" type="stmt"/>
+      <line num="81" count="1" type="stmt"/>
+      <line num="85" count="2" type="stmt"/>
       <line num="89" count="1" type="stmt"/>
-      <line num="93" count="2" type="stmt"/>
       <line num="97" count="1" type="stmt"/>
-      <line num="105" count="1" type="stmt"/>
-      <line num="109" count="1" type="stmt"/>
-      <line num="117" count="9" type="stmt"/>
+      <line num="101" count="1" type="stmt"/>
+      <line num="109" count="8" type="stmt"/>
     </file>
     <file name="zip.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/zip.js">
       <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
