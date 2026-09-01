@@ -37,6 +37,20 @@ function mockPhotoModel(getFlickrPhotos) {
   }));
 }
 
+function mockFirebaseAdmin(setMock) {
+  jest.doMock('firebase-admin/app', () => ({
+    initializeApp: jest.fn(),
+    applicationDefault: jest.fn()
+  }));
+  jest.doMock('firebase-admin/database', () => ({
+    getDatabase: jest.fn(() => ({
+      ref: jest.fn(() => ({
+        set: setMock || jest.fn(() => Promise.resolve())
+      }))
+    }))
+  }));
+}
+
 function mockStorage(bucketMock) {
   jest.doMock('@google-cloud/storage', () => ({
     Storage: jest.fn().mockImplementation(() => ({
@@ -74,6 +88,7 @@ beforeEach(() => {
 describe('downloadImage(url)', () => {
   test('should download a url into a Buffer', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel();
     global.fetch = jest.fn(() =>
       Promise.resolve({
@@ -93,6 +108,7 @@ describe('downloadImage(url)', () => {
 describe('streamZip(urls)', () => {
   test('should stream downloaded images into the upload and resolve with the filename', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel();
     global.fetch = jest.fn(url =>
       Promise.resolve({
@@ -115,6 +131,7 @@ describe('streamZip(urls)', () => {
 
   test('should reject when a download fails', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel();
     global.fetch = jest.fn(() => Promise.reject(new Error('network error')));
     const fakeStream = createFakeWriteStream(false);
@@ -130,6 +147,7 @@ describe('streamZip(urls)', () => {
 
   test('should reject when the upload stream errors', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel();
     global.fetch = jest.fn(url =>
       Promise.resolve({
@@ -151,6 +169,7 @@ describe('streamZip(urls)', () => {
 describe('getDownloadUrl(file)', () => {
   test('should resolve with a signed url', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel();
     const fileMock = {
       getSignedUrl: jest.fn(() =>
@@ -170,6 +189,7 @@ describe('getDownloadUrl(file)', () => {
 describe('handleZipRequest(tags)', () => {
   test('should download, zip, upload, and record a successful job', () => {
     mockPubSub();
+    mockFirebaseAdmin();
     mockPhotoModel(
       jest.fn(() =>
         Promise.resolve(
@@ -187,7 +207,12 @@ describe('handleZipRequest(tags)', () => {
     );
 
     const fakeStream = createFakeWriteStream(false);
-    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    const fileMock = {
+      createWriteStream: jest.fn(() => fakeStream),
+      getSignedUrl: jest.fn(() =>
+        Promise.resolve(['https://signed.example.com/public/users/x.zip'])
+      )
+    };
     mockStorage({ file: jest.fn(() => fileMock) });
 
     worker = require('../worker');
@@ -208,6 +233,7 @@ describe('listenForMessages(subscriptionNameOrId)', () => {
     mockPubSub(jest.fn((event, handler) => {
       messageHandler = handler;
     }));
+    mockFirebaseAdmin();
     mockPhotoModel(
       jest.fn(() =>
         Promise.resolve([{ media: { b: 'http://example.com/0.jpg' } }])
@@ -221,7 +247,12 @@ describe('listenForMessages(subscriptionNameOrId)', () => {
     );
 
     const fakeStream = createFakeWriteStream(false);
-    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    const fileMock = {
+      createWriteStream: jest.fn(() => fakeStream),
+      getSignedUrl: jest.fn(() =>
+        Promise.resolve(['https://signed.example.com/public/users/x.zip'])
+      )
+    };
     mockStorage({ file: jest.fn(() => fileMock) });
 
     worker = require('../worker');
@@ -247,6 +278,7 @@ describe('listenForMessages(subscriptionNameOrId)', () => {
     mockPubSub(jest.fn((event, handler) => {
       messageHandler = handler;
     }));
+    mockFirebaseAdmin();
     mockPhotoModel(jest.fn(() => Promise.reject(new Error('flickr down'))));
 
     worker = require('../worker');
