@@ -13,10 +13,10 @@ const storage = new Storage();
 // no DB in this experiment: job status kept in-process (worker runs in same instance as the API)
 const jobStatus = {};
 
-async function downloadImage(url) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+function downloadImage(url) {
+  return fetch(url)
+    .then(response => response.arrayBuffer())
+    .then(arrayBuffer => Buffer.from(arrayBuffer));
 }
 
 function buildZipBuffer(urls) {
@@ -57,14 +57,18 @@ function uploadZip(buffer) {
   });
 }
 
-async function handleZipRequest(tags) {
-  const photos = await photoModel.getFlickrPhotos(tags, 'any');
-  const urls = photos.slice(0, 10).map(photo => photo.media.b);
-  const zipBuffer = await buildZipBuffer(urls);
-  const filename = await uploadZip(zipBuffer);
-
-  jobStatus[tags] = { status: 'successful', file: `public/users/${filename}` };
-  return filename;
+// avoid `async` to keep compatibility with older ESLint parser configs
+function handleZipRequest(tags) {
+  return photoModel.getFlickrPhotos(tags, 'any')
+    .then(photos => {
+      const urls = photos.slice(0, 10).map(photo => photo.media.b);
+      return buildZipBuffer(urls);
+    })
+    .then(zipBuffer => uploadZip(zipBuffer))
+    .then(filename => {
+      jobStatus[tags] = { status: 'successful', file: `public/users/${filename}` };
+      return filename;
+    });
 }
 
 function listenForMessages(subscriptionNameOrId) {
@@ -105,6 +109,17 @@ function getDownloadUrl(file) {
     .then(([signedUrl]) => signedUrl);
 }
 
-listenForMessages(subscriptionName);
+/* istanbul ignore next -- avoid opening a real streaming pull subscription while under test */
+if (process.env.NODE_ENV !== 'test') {
+  listenForMessages(subscriptionName);
+}
 
-module.exports = { jobStatus, getDownloadUrl };
+module.exports = {
+  jobStatus,
+  getDownloadUrl,
+  downloadImage,
+  buildZipBuffer,
+  uploadZip,
+  handleZipRequest,
+  listenForMessages
+};

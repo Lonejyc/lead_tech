@@ -1,0 +1,273 @@
+const { EventEmitter } = require('events');
+
+let worker;
+
+function toArrayBuffer(text) {
+  return new TextEncoder().encode(text).buffer;
+}
+
+function createFakeWriteStream(shouldError) {
+  const stream = new EventEmitter();
+  stream.end = jest.fn(() => {
+    process.nextTick(() => {
+      if (shouldError) {
+        stream.emit('error', new Error('upload failed'));
+      } else {
+        stream.emit('finish');
+      }
+    });
+  });
+  return stream;
+}
+
+function mockPubSub(onSubscription) {
+  jest.doMock('@google-cloud/pubsub', () => ({
+    PubSub: jest.fn().mockImplementation(() => ({
+      subscription: jest.fn(() => ({
+        on: onSubscription || jest.fn()
+      }))
+    }))
+  }));
+}
+
+function mockPhotoModel(getFlickrPhotos) {
+  jest.doMock('../photo_model', () => ({
+    getFlickrPhotos: getFlickrPhotos || jest.fn(() => Promise.resolve([]))
+  }));
+}
+
+function mockStorage(bucketMock) {
+  jest.doMock('@google-cloud/storage', () => ({
+    Storage: jest.fn().mockImplementation(() => ({
+      bucket: jest.fn(() => bucketMock)
+    }))
+  }));
+}
+
+function waitUntil(assertion) {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+
+    const tick = () => {
+      try {
+        assertion();
+        resolve();
+      } catch (error) {
+        attempts += 1;
+        if (attempts > 20) {
+          reject(error);
+          return;
+        }
+        setTimeout(tick, 5);
+      }
+    };
+
+    tick();
+  });
+}
+
+beforeEach(() => {
+  jest.resetModules();
+});
+
+describe('downloadImage(url)', () => {
+  test('should download a url into a Buffer', () => {
+    mockPubSub();
+    mockPhotoModel();
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        arrayBuffer: () => Promise.resolve(toArrayBuffer('image-bytes'))
+      })
+    );
+
+    worker = require('../worker');
+
+    return worker.downloadImage('http://example.com/photo.jpg').then(buffer => {
+      expect(Buffer.isBuffer(buffer)).toBe(true);
+      expect(buffer.toString()).toBe('image-bytes');
+    });
+  });
+});
+
+describe('buildZipBuffer(urls)', () => {
+  test('should zip downloaded images into a single Buffer', () => {
+    mockPubSub();
+    mockPhotoModel();
+    global.fetch = jest.fn(url =>
+      Promise.resolve({
+        arrayBuffer: () => Promise.resolve(toArrayBuffer(url))
+      })
+    );
+
+    worker = require('../worker');
+
+    return worker
+      .buildZipBuffer(['http://example.com/1.jpg', 'http://example.com/2.jpg'])
+      .then(buffer => {
+        expect(Buffer.isBuffer(buffer)).toBe(true);
+        expect(buffer.length).toBeGreaterThan(0);
+      });
+  });
+
+  test('should reject when a download fails', () => {
+    mockPubSub();
+    mockPhotoModel();
+    global.fetch = jest.fn(() => Promise.reject(new Error('network error')));
+
+    worker = require('../worker');
+
+    return worker.buildZipBuffer(['http://example.com/1.jpg']).catch(error => {
+      expect(error.message).toMatch(/network error/);
+    });
+  });
+});
+
+describe('uploadZip(buffer)', () => {
+  test('should resolve with the generated filename on success', () => {
+    mockPubSub();
+    mockPhotoModel();
+    const fakeStream = createFakeWriteStream(false);
+    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    mockStorage({ file: jest.fn(() => fileMock) });
+
+    worker = require('../worker');
+
+    return worker.uploadZip(Buffer.from('zip-bytes')).then(filename => {
+      expect(filename).toMatch(/\.zip$/);
+    });
+  });
+
+  test('should reject when the upload stream errors', () => {
+    mockPubSub();
+    mockPhotoModel();
+    const fakeStream = createFakeWriteStream(true);
+    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    mockStorage({ file: jest.fn(() => fileMock) });
+
+    worker = require('../worker');
+
+    return worker.uploadZip(Buffer.from('zip-bytes')).catch(error => {
+      expect(error.message).toMatch(/upload failed/);
+    });
+  });
+});
+
+describe('getDownloadUrl(file)', () => {
+  test('should resolve with a signed url', () => {
+    mockPubSub();
+    mockPhotoModel();
+    const fileMock = {
+      getSignedUrl: jest.fn(() =>
+        Promise.resolve(['https://signed.example.com/public/users/x.zip'])
+      )
+    };
+    mockStorage({ file: jest.fn(() => fileMock) });
+
+    worker = require('../worker');
+
+    return worker.getDownloadUrl('public/users/x.zip').then(url => {
+      expect(url).toBe('https://signed.example.com/public/users/x.zip');
+    });
+  });
+});
+
+describe('handleZipRequest(tags)', () => {
+  test('should download, zip, upload, and record a successful job', () => {
+    mockPubSub();
+    mockPhotoModel(
+      jest.fn(() =>
+        Promise.resolve(
+          Array.from({ length: 12 }, (_, index) => ({
+            media: { b: `http://example.com/${index}.jpg` }
+          }))
+        )
+      )
+    );
+
+    global.fetch = jest.fn(url =>
+      Promise.resolve({
+        arrayBuffer: () => Promise.resolve(toArrayBuffer(url))
+      })
+    );
+
+    const fakeStream = createFakeWriteStream(false);
+    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    mockStorage({ file: jest.fn(() => fileMock) });
+
+    worker = require('../worker');
+
+    return worker.handleZipRequest('dogs').then(filename => {
+      expect(filename).toMatch(/\.zip$/);
+      expect(worker.jobStatus.dogs).toEqual({
+        status: 'successful',
+        file: `public/users/${filename}`
+      });
+    });
+  });
+});
+
+describe('listenForMessages(subscriptionNameOrId)', () => {
+  test('should ack the message and record success', () => {
+    let messageHandler;
+    mockPubSub(jest.fn((event, handler) => {
+      messageHandler = handler;
+    }));
+    mockPhotoModel(
+      jest.fn(() =>
+        Promise.resolve([{ media: { b: 'http://example.com/0.jpg' } }])
+      )
+    );
+
+    global.fetch = jest.fn(url =>
+      Promise.resolve({
+        arrayBuffer: () => Promise.resolve(toArrayBuffer(url))
+      })
+    );
+
+    const fakeStream = createFakeWriteStream(false);
+    const fileMock = { createWriteStream: jest.fn(() => fakeStream) };
+    mockStorage({ file: jest.fn(() => fileMock) });
+
+    worker = require('../worker');
+    worker.listenForMessages('test-subscription');
+
+    const message = {
+      id: '1',
+      data: Buffer.from(JSON.stringify({ tags: 'cats' })),
+      ack: jest.fn(),
+      nack: jest.fn()
+    };
+
+    messageHandler(message);
+
+    return waitUntil(() => {
+      expect(message.ack).toHaveBeenCalled();
+      expect(worker.jobStatus.cats.status).toBe('successful');
+    });
+  });
+
+  test('should nack the message and record failure', () => {
+    let messageHandler;
+    mockPubSub(jest.fn((event, handler) => {
+      messageHandler = handler;
+    }));
+    mockPhotoModel(jest.fn(() => Promise.reject(new Error('flickr down'))));
+
+    worker = require('../worker');
+    worker.listenForMessages('test-subscription');
+
+    const message = {
+      id: '2',
+      data: Buffer.from(JSON.stringify({ tags: 'birds' })),
+      ack: jest.fn(),
+      nack: jest.fn()
+    };
+
+    messageHandler(message);
+
+    return waitUntil(() => {
+      expect(message.nack).toHaveBeenCalled();
+      expect(worker.jobStatus.birds.status).toBe('failed');
+    });
+  });
+});
