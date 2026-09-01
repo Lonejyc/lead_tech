@@ -1,5 +1,3 @@
-/* global document */
-
 let button = document.getElementById("zip-btn");
 
 button.addEventListener("click", function () {
