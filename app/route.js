@@ -1,6 +1,7 @@
 const formValidator = require('./form_validator');
 const photoModel = require('./photo_model');
 const zip = require('./zip');
+const worker = require('./worker');
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -12,7 +13,8 @@ function route(app) {
       tagmodeParameter: tagmode || '',
       photos: [],
       searchResults: false,
-      invalidParameters: false
+      invalidParameters: false,
+      downloadUrl: null
     };
 
     // if no input params are passed in then render the view with out querying the api
@@ -26,12 +28,19 @@ function route(app) {
       return res.render('index', ejsLocalVariables);
     }
 
+    // if a zip job already finished for these tags, generate a download link for it
+    const job = worker.jobStatus[tags];
+    const downloadUrlPromise =
+      job && job.status === 'successful'
+        ? worker.getDownloadUrl(job.file)
+        : Promise.resolve(null);
+
     // get photos from flickr public feed api
-    return photoModel
-      .getFlickrPhotos(tags, tagmode)
-      .then(photos => {
+    return Promise.all([photoModel.getFlickrPhotos(tags, tagmode), downloadUrlPromise])
+      .then(([photos, downloadUrl]) => {
         ejsLocalVariables.photos = photos;
         ejsLocalVariables.searchResults = true;
+        ejsLocalVariables.downloadUrl = downloadUrl;
         return res.render('index', ejsLocalVariables);
       })
       .catch(error => {

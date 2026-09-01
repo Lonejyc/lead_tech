@@ -8,6 +8,12 @@
 
     <% if (photos.length) { %>
 
+      <% if (downloadUrl) { %>
+        <div class="alert alert-success">
+          <a href="<%= downloadUrl %>">Download zip</a>
+        </div>
+      <% } %>
+
       <ul>
         <% photos.forEach(function (photo) { %>
           <li class="list-unstyled">
