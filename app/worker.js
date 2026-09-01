@@ -19,14 +19,25 @@ function downloadImage(url) {
     .then(arrayBuffer => Buffer.from(arrayBuffer));
 }
 
-function buildZipBuffer(urls) {
-  return new Promise((resolve, reject) => {
-    const archive = archiver('zip');
-    const chunks = [];
+function streamZip(urls) {
+  const filename = `${crypto.randomUUID()}.zip`;
+  const file = storage.bucket(bucketName).file(`public/users/${filename}`);
+  const uploadStream = file.createWriteStream({
+    metadata: {
+      contentType: 'application/zip',
+      cacheControl: 'private'
+    },
+    resumable: false
+  });
 
-    archive.on('data', chunk => chunks.push(chunk));
+  const archive = archiver('zip');
+
+  return new Promise((resolve, reject) => {
     archive.on('error', reject);
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
+    uploadStream.on('error', reject);
+    uploadStream.on('finish', () => resolve(filename));
+
+    archive.pipe(uploadStream);
 
     Promise.all(urls.map(downloadImage))
       .then(buffers => {
@@ -39,32 +50,13 @@ function buildZipBuffer(urls) {
   });
 }
 
-function uploadZip(buffer) {
-  const filename = `${crypto.randomUUID()}.zip`;
-  const file = storage.bucket(bucketName).file(`public/users/${filename}`);
-  const stream = file.createWriteStream({
-    metadata: {
-      contentType: 'application/zip',
-      cacheControl: 'private'
-    },
-    resumable: false
-  });
-
-  return new Promise((resolve, reject) => {
-    stream.on('error', reject);
-    stream.on('finish', () => resolve(filename));
-    stream.end(buffer);
-  });
-}
-
 // avoid `async` to keep compatibility with older ESLint parser configs
 function handleZipRequest(tags) {
   return photoModel.getFlickrPhotos(tags, 'any')
     .then(photos => {
       const urls = photos.slice(0, 10).map(photo => photo.media.b);
-      return buildZipBuffer(urls);
+      return streamZip(urls);
     })
-    .then(zipBuffer => uploadZip(zipBuffer))
     .then(filename => {
       jobStatus[tags] = { status: 'successful', file: `public/users/${filename}` };
       return filename;
@@ -118,8 +110,7 @@ module.exports = {
   jobStatus,
   getDownloadUrl,
   downloadImage,
-  buildZipBuffer,
-  uploadZip,
+  streamZip,
   handleZipRequest,
   listenForMessages
 };
