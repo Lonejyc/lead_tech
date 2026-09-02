@@ -110,6 +110,19 @@ function listenForMessages(subscriptionNameOrId) {
   subscription.on('message', messageHandler);
 }
 
+function listArchives() {
+  return db
+    .ref('jocelyn')
+    .once('value')
+    .then(snapshot => {
+      const dataByTimestamp = snapshot.val() || {};
+
+      return Object.values(dataByTimestamp).reduce((archives, filesAtTimestamp) => {
+        return archives.concat(Object.values(filesAtTimestamp));
+      }, []);
+    });
+}
+
 function getDownloadUrl(file) {
   const options = {
     action: 'read',
@@ -134,6 +147,7 @@ if (process.env.NODE_ENV !== 'test') {
 module.exports = {
   jobStatus,
   getDownloadUrl,
+  listArchives,
   downloadImage,
   streamZip,
   handleZipRequest,
