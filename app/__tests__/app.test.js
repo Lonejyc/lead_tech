@@ -3,6 +3,7 @@ const request = require('supertest');
 jest.mock('../../app/photo_model');
 jest.mock('../../app/worker');
 jest.mock('../../app/zip');
+jest.mock('../../app/rate-limiter');
 const worker = require('../../app/worker');
 const app = require('../../app/server');
 

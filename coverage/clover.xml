@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1788269082761" clover="3.2.0">
-  <project timestamp="1788269082761" name="All files">
-    <metrics statements="134" coveredstatements="134" conditionals="20" coveredconditionals="20" methods="35" coveredmethods="35" elements="189" coveredelements="189" complexity="0" loc="134" ncloc="134" packages="1" files="7" classes="7"/>
+<coverage generated="1788349710872" clover="3.2.0">
+  <project timestamp="1788349710872" name="All files">
+    <metrics statements="135" coveredstatements="135" conditionals="20" coveredconditionals="20" methods="35" coveredmethods="35" elements="190" coveredelements="190" complexity="0" loc="135" ncloc="135" packages="1" files="7" classes="7"/>
     <file name="form_validator.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/form_validator.js">
       <metrics statements="5" coveredstatements="5" conditionals="4" coveredconditionals="4" methods="3" coveredmethods="3"/>
       <line num="3" count="11" type="stmt"/>
@@ -38,36 +38,37 @@
       <line num="22" count="3" type="stmt"/>
     </file>
     <file name="route.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/route.js">
-      <metrics statements="29" coveredstatements="29" conditionals="14" coveredconditionals="14" methods="7" coveredmethods="7"/>
+      <metrics statements="30" coveredstatements="30" conditionals="14" coveredconditionals="14" methods="7" coveredmethods="7"/>
       <line num="1" count="1" type="stmt"/>
       <line num="2" count="1" type="stmt"/>
       <line num="3" count="1" type="stmt"/>
       <line num="4" count="1" type="stmt"/>
-      <line num="7" count="1" type="stmt"/>
-      <line num="8" count="5" type="stmt"/>
+      <line num="5" count="1" type="stmt"/>
+      <line num="8" count="1" type="stmt"/>
       <line num="9" count="5" type="stmt"/>
-      <line num="11" count="5" type="stmt"/>
-      <line num="21" count="5" type="cond" truecount="4" falsecount="0"/>
-      <line num="22" count="1" type="stmt"/>
-      <line num="26" count="4" type="cond" truecount="2" falsecount="0"/>
-      <line num="27" count="1" type="stmt"/>
+      <line num="10" count="5" type="stmt"/>
+      <line num="12" count="5" type="stmt"/>
+      <line num="22" count="5" type="cond" truecount="4" falsecount="0"/>
+      <line num="23" count="1" type="stmt"/>
+      <line num="27" count="4" type="cond" truecount="2" falsecount="0"/>
       <line num="28" count="1" type="stmt"/>
-      <line num="32" count="3" type="stmt"/>
-      <line num="34" count="3" type="cond" truecount="4" falsecount="0"/>
-      <line num="39" count="3" type="stmt"/>
-      <line num="41" count="2" type="stmt"/>
+      <line num="29" count="1" type="stmt"/>
+      <line num="33" count="3" type="stmt"/>
+      <line num="35" count="3" type="cond" truecount="4" falsecount="0"/>
+      <line num="40" count="3" type="stmt"/>
       <line num="42" count="2" type="stmt"/>
       <line num="43" count="2" type="stmt"/>
       <line num="44" count="2" type="stmt"/>
-      <line num="47" count="1" type="stmt"/>
+      <line num="45" count="2" type="stmt"/>
       <line num="48" count="1" type="stmt"/>
-      <line num="52" count="1" type="stmt"/>
-      <line num="53" count="2" type="stmt"/>
+      <line num="49" count="1" type="stmt"/>
+      <line num="53" count="1" type="stmt"/>
       <line num="54" count="2" type="stmt"/>
-      <line num="57" count="1" type="stmt"/>
-      <line num="58" count="1" type="stmt"/>
+      <line num="56" count="2" type="stmt"/>
+      <line num="59" count="1" type="stmt"/>
       <line num="60" count="1" type="stmt"/>
-      <line num="65" count="1" type="stmt"/>
+      <line num="62" count="1" type="stmt"/>
+      <line num="67" count="1" type="stmt"/>
     </file>
     <file name="server.js" path="/Users/jocelyn/Documents/Gobelins/Lead-tech/tp1/app/server.js">
       <metrics statements="17" coveredstatements="17" conditionals="2" coveredconditionals="2" methods="0" coveredmethods="0"/>
