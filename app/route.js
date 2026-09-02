@@ -2,6 +2,7 @@ const formValidator = require('./form_validator');
 const photoModel = require('./photo_model');
 const zip = require('./zip');
 const worker = require('./worker');
+const { rateLimiter } = require('./rate-limiter');
 
 function route(app) {
   app.get('/', (req, res) => {
@@ -44,13 +45,14 @@ function route(app) {
         return res.render('index', ejsLocalVariables);
       })
       .catch(error => {
-        console.log('aspdfonaposd', error)
+        console.log('error', error);
         return res.status(500).send({ error });
       });
   });
 
-  app.post('/zip', (req, res) => {
+  app.post('/zip', rateLimiter, (req, res) => {
     let tags = req.query.tags;
+
     return zip
       .publishZipRequest(tags)
       .then(messageId => {
