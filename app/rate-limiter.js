@@ -1,36 +1,56 @@
+const { createClient } = require('redis');
+
 const REFILL_RATE = 1; // tokens per second
 const BUCKET_SIZE = 15; // max tokens
 const REQUEST_COST = 3; // tokens per request
 
-const buckets = new Map();
+const client = createClient({
+  username: process.env.REDIS_USERNAME,
+  password: process.env.REDIS_PASSWORD,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT)
+  }
+});
+
+client.on('error', error => console.error('Redis client error', error));
+
+/* istanbul ignore next -- no real redis connection under test */
+if (process.env.NODE_ENV !== 'test') {
+  client.connect();
+}
 
 function getIp(req) {
   return req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
 }
 
-function refill(bucket, now) {
-  const elapsedSeconds = (now - bucket.lastRefill) / 1000;
-  bucket.tokens = Math.min(BUCKET_SIZE, bucket.tokens + elapsedSeconds * REFILL_RATE);
-  bucket.lastRefill = now;
+function bucketKey(ip) {
+  return `token-bucket:${ip}`;
 }
 
+// consumes REQUEST_COST tokens for ip, refilling based on elapsed time since last visit
+// bucket is stored in redis as a hash: { tokens, lastRefill } keyed by ip
+// avoid `async` to keep compatibility with older ESLint parser configs
 function consume(ip) {
+  const key = bucketKey(ip);
   const now = Date.now();
-  let bucket = buckets.get(ip);
 
-  if (!bucket) {
-    bucket = { tokens: BUCKET_SIZE, lastRefill: now };
-    buckets.set(ip, bucket);
-  } else {
-    refill(bucket, now);
-  }
+  return client.hGetAll(key).then(bucket => {
+    let tokens = BUCKET_SIZE;
 
-  if (bucket.tokens < REQUEST_COST) {
-    return false;
-  }
+    if (bucket && bucket.tokens !== undefined) {
+      const lastRefill = Number(bucket.lastRefill);
+      const elapsedSeconds = (now - lastRefill) / 1000;
+      tokens = Math.min(BUCKET_SIZE, Number(bucket.tokens) + elapsedSeconds * REFILL_RATE);
+    }
 
-  bucket.tokens -= REQUEST_COST;
-  return true;
+    if (tokens < REQUEST_COST) {
+      return client.hSet(key, { tokens, lastRefill: now }).then(() => false);
+    }
+
+    tokens -= REQUEST_COST;
+    return client.hSet(key, { tokens, lastRefill: now }).then(() => true);
+  });
 }
 
 function rateLimiter(req, res, next) {
@@ -40,17 +60,21 @@ function rateLimiter(req, res, next) {
     return res.status(400).send({ error: 'unable to identify client ip' });
   }
 
-  if (!consume(ip)) {
-    return res.status(429).send({ error: 'too many requests' });
-  }
+  return consume(ip)
+    .then(allowed => {
+      if (!allowed) {
+        return res.status(429).send({ error: 'too many requests' });
+      }
 
-  return next();
+      return next();
+    })
+    .catch(error => res.status(500).send({ error: error.message }));
 }
 
 module.exports = {
   rateLimiter,
   getIp,
-  buckets,
+  client,
   REFILL_RATE,
   BUCKET_SIZE,
   REQUEST_COST
