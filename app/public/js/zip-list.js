@@ -4,6 +4,7 @@ import { firebaseApp } from "./firebase-init.js";
 const db = getDatabase(firebaseApp);
 const zipListEl = document.getElementById("zip-list");
 const showMoreBtn = document.getElementById("zip-list-show-more");
+const zipCountEl = document.getElementById("zip-count");
 
 const PAGE_SIZE = 5;
 const LOAD_MORE_SIZE = 50;
@@ -38,6 +39,7 @@ onValue(ref(db, "jocelyn"), snapshot => {
     .filter(zip => zip.status === "successful")
     .sort((a, b) => b.timestamp - a.timestamp);
 
+  zipCountEl.textContent = allEntries.length;
   visibleCount = PAGE_SIZE;
   renderZips();
 });
